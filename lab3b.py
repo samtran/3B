@@ -7,7 +7,7 @@ class Superblock(object):
     if len(line) is not 8:
       print "Error in Superblock...exiting"
       exit(2)
-    else:#TODO: make these global??
+    else:
       self.tot_blocks = int(line[1])
       self.tot_inodes = int(line[2])
       self.block_size = int(line[3])
@@ -21,7 +21,7 @@ class Group(object):
     if len(line) is not 9:
       print "Error in Group...exiting"
       exit(2)
-    else:#TODO: make these global??                                                                                                                  
+    else:
       self.group_num = int(line[1])
       self.tot_block_in_group = int(line[2])
       self.tot_inodes_in_group = int(line[3])
@@ -96,7 +96,7 @@ class Dirent(object):
       self.inode_num = int(line[3])
       self.entry_len = int(line[4])
       self.name_len = int(line[5])
-      self.name = line[6]
+      self.name = line[6].rstrip()
 
 indirect_list = []
 class Indirect(object):
@@ -141,8 +141,24 @@ def inode_audit(superblock):
         if inode > 10:
           print "UNALLOCATED INODE",inode,"NOT ON FREELIST"
       
-    
-    
+def check_directory_two(superblock):
+  one_dot = []
+  two_dot = []
+  for dir in dirent_list:
+    if dir.name[1:-1] is '.':
+      one_dot.append(dir.parent_inode) #TODO: should this be inode num of referenced file??
+    elif dir.name[1:-1] == '..':
+      two_dot.append(dir.parent_inode)
+  
+  for dir in dirent_list: #make sure each entry is in one dot and two dot
+    if dir.parent_inode not in one_dot and dir.parent_inode not in two_dot: 
+      print "DIRECTORY INODE",dir.parent_inode,"NAME '..' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+      print "DIRECTORY INODE",dir.parent_inode,"NAME '.' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+    elif dir.parent_inode not in one_dot:
+      print "DIRECTORY INODE",dir.parent_inode,"NAME '.' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+    elif dir.parent_inode not in two_dot:
+      print "DIRECTORY INODE",dir.parent_inode,"NAME '..' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+
 def check_inode_linkcount(superblock):
   #total number of inodes
   #if there's only 1 group, tot_blocks could be < blocks per group                                                                               
@@ -205,6 +221,8 @@ def main():
   
   #Directory Consistency audits
   check_inode_linkcount(superblock)
+  check_directory_two(superblock)#check for . and ..
+
 if __name__ == '__main__':
   if len(sys.argv) < 2:
     print "Requires at least 1 argument..exiting"
