@@ -168,17 +168,16 @@ def check_inode_linkcount(superblock):
     total_inodes = (superblock.tot_blocks / superblock.blocks_per_group) * (superblock.inodes_per_group)
   inode_to_link = {}
   for dir in dirent_list:
-    inode = dir.parent_inode #TODO: should this be inode num of referenced file??
+    inode = dir.inode_num
     if inode > total_inodes:
       #invalid inode
-      print "DIRECTORY INODE",inode,"NAME",dir.name,"INVALID INODE",dir.inode_num #TODO: check single quotes around name
-    #TODO: do we need to check for . and .. before we increment link counter? Not totally sure from the trivial output
+      print "DIRECTORY INODE",inode,"NAME",dir.name,"INVALID INODE",dir.inode_num 
     if inode in inode_to_link:
       inode_to_link[inode] += 1#already in dictory so increment link counter
     else:
       inode_to_link[inode] = 1#init link counter dictionary entry
     if inode not in inode_number_list: #unallocated inode
-      print "DIRECTORY INODE",inode,"NAME",dir.name,"UNALLOCATED INODE",dir.inode_num #TODO: check single quotes around name
+      print "DIRECTORY INODE",inode,"NAME",dir.name,"UNALLOCATED INODE",dir.inode_num
   #check dictionary with inode link count values
   for inode in inode_list:
     if inode.inode_num in inode_to_link:
