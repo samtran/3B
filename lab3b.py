@@ -106,28 +106,30 @@ tripple_blocks = []
 def helper_offset(inx):
   if inx == 12:
   	return 12
-  if inx == 13:
+  elif inx == 13:
   	return 268
-  if inx == 14:
+  elif inx == 14:
   	return 65804
-  return 0
+  else:
+  	return 0
 
 def helper_indirect(inx):
-  if inx == 12:
+  if (inx == 12):
   	return "INDIRECT "
-  if inx == 13:
+  elif (inx == 13):
   	return "DOUBLY INDIRECT "
-  if inx == 14:
+  elif (inx == 14):
   	return "TRIPPLY INDIRECT "
-  return ""
+  else:
+  	return ""
 
 def invalid_blocks(superblock):
   for inode in inode_list:
 	for inx,bp in enumerate(inode.block_pointers):
 	  if int(bp) < 0 or int(bp) > superblock.tot_blocks:
-	  	indirect = helper_indirect(int(bp))
-	  	offset = helper_offset(int(bp))
-	  	print "INVALID " + indirect + "BLOCK " + str(bp) + " in INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+	  	indirect = helper_indirect(int(inx))
+	  	offset = helper_offset(int(inx))
+	  	print "INVALID " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
 
 def allocated_blocks():
   # check all of the inodes in inode_list[i].block_pointers and see if they are
@@ -137,7 +139,7 @@ def allocated_blocks():
 	for inode in inode_list:
 	  for bp in inode.block_pointers:
 		if free_block == int(bp) and int(bp) not in already_printed:
-		  print "ALLOCATED BLOCK " + bp + " ON FREELIST"
+		  print "ALLOCATED BLOCK " + str(int(bp)) + " ON FREELIST"
 		  already_printed.add(int(bp))
 
 dup_blocks = []
@@ -173,12 +175,12 @@ def duplicate_blocks():
 	  if int(bp) == 0:
 	  	continue
 	  if is_it_duplicate(int(bp)) == True:
-		offset = helper_offset(int(bp))
-		indirect = helper_indirect(int(bp))
+		offset = helper_offset(int(inx))
+		indirect = helper_indirect(int(inx))
 		dup_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
 	  else:
-		offset = helper_offset(int(bp))
-		indirect = helper_indirect(int(bp))
+		offset = helper_offset(int(inx))
+		indirect = helper_indirect(int(inx))
 		unique_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
   for dups in dup_blocks:
   	print "DUPLICATE " + dups.indirect + "BLOCK " + str(dups.block_num) + " IN INODE " + str(dups.inode_num) + " AT OFFSET " + str(dups.offset)
