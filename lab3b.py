@@ -68,7 +68,7 @@ class Inode(object):
       self.last_acc = line[9]
       self.file_size = int(line[10])
       self.num_blocks = int(line[11])
-      self.block_pointers = line[12:26] # Convert to int when you want to use
+      self.block_pointers = line[12:27] # Convert to int when you want to use
 
 dirent_list = []
 class Dirent(object):
@@ -97,22 +97,89 @@ class Indirect(object):
       self.block_num_indirect = int(line[4])
       self.block_num_ref = int(line[5])
 
-def allocated_blocks():
-  # check all of the inodes in inode_list[i].block_pointers and see if they are
-  # also in free_inodes[], if so print
-  for free_block in free_blocks:
-	for inode in inode_list:
-	  for bp in inode.block_pointers:
-		if free_block == int(bp):
-		  print "ALLOCATED BLOCK " + bp + " ON FREELIST"
-
 #multiple references data structs
 direct_blocks = []
 single_blocks = []
 double_blocks = []
 tripple_blocks = []
-#def block_audit():
-  #check each inode_list, dirent
+
+def allocated_blocks():
+  # check all of the inodes in inode_list[i].block_pointers and see if they are
+  # also in free_inodes[], if so print
+  already_printed = set()
+  for free_block in free_blocks:
+	for inode in inode_list:
+	  for bp in inode.block_pointers:
+		if free_block == int(bp) and int(bp) not in already_printed:
+		  print "ALLOCATED BLOCK " + bp + " ON FREELIST"
+		  already_printed.add(int(bp))
+
+dup_blocks = []
+unique_blocks = []
+class Dup_block(object):
+  def __init__(self, bp, inode, offset, indirect):
+  	self.inode_num = int(inode)
+  	self.block_num = int(bp)
+  	self.offset = int(offset)
+  	self.indirect = indirect
+
+# add the Dup_block  to dup_blockswhere the other block was found
+# deletes it from there soon after
+# returns true so it is added to dup_block
+def is_it_duplicate(bp):
+  for block in dup_blocks:
+	if block.block_num == bp:
+	  return True
+  for block in unique_blocks:
+	if block.block_num == bp: # duplicate found
+	  dup_blocks.append(block)
+	  unique_blocks.remove(block)
+	  return True
+  return False
+
+# Logic:
+# Have an array of unique_blocks that holds elements of type Dup_block
+# if there is a match between an element of unique_block and another, put both in dup_blocks array
+# compare to the list in dup_blocks as well and delete the element from unique_blocks
+def duplicate_blocks():
+  for inode in inode_list:
+	for inx, bp in enumerate(inode.block_pointers):
+	  if int(bp) == 0:
+	  	continue
+	  if is_it_duplicate(int(bp)) == True:
+	  	# Add bp to dup_blocks
+		if inx == 12:
+		  offset = 12
+		  indirect = "INDIRECT "
+		elif inx == 13:
+		  offset = 268
+		  indirect = "DOUBLE INDIRECT "
+		elif inx == 14:
+		  offset = 65804
+		  indirect = "TRIPPLE INDIRECT "
+		else:
+		  offset = 0
+		  indirect = ""
+		dup_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
+	  else:
+		if inx == 12:
+		  offset = 12
+		  indirect = "INDIRECT "
+		elif inx == 13:
+		  offset = 268
+		  indirect = "DOUBLE INDIRECT "
+		elif inx == 14:
+		  offset = 65804
+		  indirect = "TRIPPLE INDIRECT "
+		else:
+		  offset = 0
+		  indirect = ""
+		unique_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
+  for dups in dup_blocks:
+  	print "DUPLICATE " + dups.indirect + "BLOCK " + str(dups.block_num) + " IN INODE " + str(dups.inode_num) + " AT OFFSET " + str(dups.offset)
+  	
+	  
+
 
 def inode_audit(superblock):
   #if there's only 1 group, tot_blocks could be < blocks per group 
@@ -218,6 +285,7 @@ def main():
   inode_audit(superblock)
 #  unreferenced_blocks()
   allocated_blocks()
+  duplicate_blocks()
   #Directory Consistency audits
   check_inode_linkcount(superblock)
   check_directory_two(superblock)#check for . and ..
