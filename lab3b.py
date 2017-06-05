@@ -103,6 +103,32 @@ single_blocks = []
 double_blocks = []
 tripple_blocks = []
 
+def helper_offset(inx):
+  if inx == 12:
+  	return 12
+  if inx == 13:
+  	return 268
+  if inx == 14:
+  	return 65804
+  return 0
+
+def helper_indirect(inx):
+  if inx == 12:
+  	return "INDIRECT "
+  if inx == 13:
+  	return "DOUBLY INDIRECT "
+  if inx == 14:
+  	return "TRIPPLY INDIRECT "
+  return ""
+
+def invalid_blocks(superblock):
+  for inode in inode_list:
+	for inx,bp in enumerate(inode.block_pointers):
+	  if int(bp) < 0 or int(bp) > superblock.tot_blocks:
+	  	indirect = helper_indirect(int(bp))
+	  	offset = helper_offset(int(bp))
+	  	print "INVALID " + indirect + "BLOCK " + str(bp) + " in INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+
 def allocated_blocks():
   # check all of the inodes in inode_list[i].block_pointers and see if they are
   # also in free_inodes[], if so print
@@ -147,33 +173,12 @@ def duplicate_blocks():
 	  if int(bp) == 0:
 	  	continue
 	  if is_it_duplicate(int(bp)) == True:
-	  	# Add bp to dup_blocks
-		if inx == 12:
-		  offset = 12
-		  indirect = "INDIRECT "
-		elif inx == 13:
-		  offset = 268
-		  indirect = "DOUBLE INDIRECT "
-		elif inx == 14:
-		  offset = 65804
-		  indirect = "TRIPPLE INDIRECT "
-		else:
-		  offset = 0
-		  indirect = ""
+		offset = helper_offset(int(bp))
+		indirect = helper_indirect(int(bp))
 		dup_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
 	  else:
-		if inx == 12:
-		  offset = 12
-		  indirect = "INDIRECT "
-		elif inx == 13:
-		  offset = 268
-		  indirect = "DOUBLE INDIRECT "
-		elif inx == 14:
-		  offset = 65804
-		  indirect = "TRIPPLE INDIRECT "
-		else:
-		  offset = 0
-		  indirect = ""
+		offset = helper_offset(int(bp))
+		indirect = helper_indirect(int(bp))
 		unique_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
   for dups in dup_blocks:
   	print "DUPLICATE " + dups.indirect + "BLOCK " + str(dups.block_num) + " IN INODE " + str(dups.inode_num) + " AT OFFSET " + str(dups.offset)
@@ -284,6 +289,7 @@ def main():
   #Inode audits
   inode_audit(superblock)
 #  unreferenced_blocks()
+  invalid_blocks(superblock)
   allocated_blocks()
   duplicate_blocks()
   #Directory Consistency audits
