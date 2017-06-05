@@ -5,7 +5,7 @@ from sys import stderr
 class Superblock(object):
   def __init__(self, line):
     if len(line) is not 8:
-      print "Error in Superblock...exiting"
+      print "Superblock does not have enough arguments...exiting"
       exit(2)
     else:
       self.tot_blocks = int(line[1])
@@ -19,7 +19,7 @@ class Superblock(object):
 class Group(object):
   def __init__(self, line):
     if len(line) is not 9:
-      print "Error in Group...exiting"
+      print "Group does not have enough arguments...exiting"
       exit(2)
     else:
       self.group_num = int(line[1])
@@ -35,7 +35,7 @@ free_blocks = []
 class Bfree(object):
   def __init__(self, line):
     if len(line) is not 2:
-      print "Error in Bfree...exiting"
+      print "BFree does not have enough arguments...exiting"
       exit(2)
     else: 
       free_blocks.append(int(line[1]))
@@ -44,7 +44,7 @@ free_inodes = []
 class Ifree(object):
   def __init__(self, line):
     if len(line) is not 2:
-      print "Error in Ifree...exiting"
+      print "Ifree does not have enough arguments...exiting"
       exit(2)
     else:
       free_inodes.append(int(line[1]))
@@ -54,7 +54,7 @@ inode_number_list = []
 class Inode(object):
   def __init__(self, line):
     if len(line) is not 27:
-      print "Error in Inode...exiting"
+      print "Inode does not have enough arguments...exiting"
       exit(2)
     else:
       self.inode_num = int(line[1])
@@ -68,27 +68,13 @@ class Inode(object):
       self.last_acc = line[9]
       self.file_size = int(line[10])
       self.num_blocks = int(line[11])
-      self.dir1 = int(line[12])
-      self.dir2 = int(line[13])
-      self.dir3 = int(line[14])
-      self.dir4 = int(line[15])
-      self.dir5 = int(line[16])
-      self.dir6 = int(line[17])
-      self.dir7 = int(line[18])
-      self.dir8 = int(line[19])
-      self.dir9 = int(line[20])
-      self.dir10 = int(line[21])
-      self.dir11 = int(line[22])
-      self.dir12 = int(line[23])
-      self.indir1 = int(line[24])
-      self.indir2 = int(line[25])
-      self.indir3 = int(line[26])
+      self.block_pointers = line[12:26] # Convert to int when you want to use
 
 dirent_list = []
 class Dirent(object):
   def __init__(self,line):
     if len(line) is not 7:
-      print "Error in Dirent...exiting"
+      print "Dirent does not enough arguments...exiting"
       exit(2)
     else:
       self.parent_inode = int(line[1])
@@ -102,7 +88,7 @@ indirect_list = []
 class Indirect(object):
   def __init__(self, line):
     if len(line) is not 6:
-      print "Error in Indirect...exiting"
+      print "Error in Indirect does not have enough arguments...exiting"
       exit(2)
     else:
       self.inode_num_owning = int(line[1])
@@ -110,6 +96,15 @@ class Indirect(object):
       self.log_block_offset = int(line[3])
       self.block_num_indirect = int(line[4])
       self.block_num_ref = int(line[5])
+
+def allocated_blocks():
+  # check all of the inodes in inode_list[i].block_pointers and see if they are
+  # also in free_inodes[], if so print
+  for free_block in free_blocks:
+	for inode in inode_list:
+	  for bp in inode.block_pointers:
+		if free_block == int(bp):
+		  print "ALLOCATED BLOCK " + bp + " ON FREELIST"
 
 #multiple references data structs
 direct_blocks = []
@@ -189,6 +184,7 @@ def check_inode_linkcount(superblock):
     
 def main():
   f = open(sys.argv[1], 'r')
+  super
   for line in f:
       csv = line.split(",")
       if csv[0] == "SUPERBLOCK":
@@ -213,11 +209,15 @@ def main():
         exit(2)
   f.close()
 
+  if superblock == "":
+  	print "No superblock found...exiting\n"
+
   #Block consistency audits
   #block_audit()
   #Inode audits
   inode_audit(superblock)
-  
+#  unreferenced_blocks()
+  allocated_blocks()
   #Directory Consistency audits
   check_inode_linkcount(superblock)
   check_directory_two(superblock)#check for . and ..

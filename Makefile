@@ -3,10 +3,10 @@
 #ID: 804282884 504488023
 
 default:
-	gcc -o lab3b -g lab3b.c
+	python lab3b.py
 
 clean:
-	rm -r lab3b-504488023.tar.gz output.csv
+	rm -r lab3b-504488023.tar.gz 
 
 dist:
-	tar -zcvf lab3b-504488023.tar.gz README Makefile lab3b.c
+	tar -zcvf lab3b-504488023.tar.gz README Makefile lab3b.py

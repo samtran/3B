@@ -1,0 +1,11 @@
+#NAME:Samantha Tran, Apurva Panse
+#EMAIL: samantha.tran95@gmail.com
+#ID: 804282884 504488023
+
+Slip days: 1 from Samantha Tran, 1 from Apurva Panse
+
+Makefile: Has default option to build code, dist option to create tar.gz, and clean to clean enviroment
+
+README: Contains info about files included
+
+lab3b.py: Python module to accept a csv file as an argument and analyze it for any errors
