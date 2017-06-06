@@ -192,7 +192,7 @@ def inode_audit(superblock):
   #if there's only 1 group, tot_blocks could be < blocks per group 
   if(superblock.tot_blocks < superblock.blocks_per_group):
     total_inodes = superblock.inodes_per_group
-  else:#TODO: this would need to be fixed for multiple groups. 
+  else:#this would need to be fixed for multiple groups. 
     total_inodes = (superblock.tot_blocks / superblock.blocks_per_group) * (superblock.inodes_per_group)
   #check allocated inodes
   used_inodes = []
@@ -211,12 +211,36 @@ def inode_audit(superblock):
           print "UNALLOCATED INODE",inode,"NOT ON FREELIST"
       
 def check_directory_two(superblock):
-  one_dot = []
+  parent = {}
+  if( superblock.tot_blocks < superblock.blocks_per_group):
+    total_inodes = superblock.inodes_per_group
+  else:#this would need to be fixed for multiple groups.                                                                                             
+    total_inodes = (superblock.tot_blocks / superblock.blocks_per_group) * (superblock.inodes_per_group)
+  for dir in dirent_list:
+    if dir.inode_num < total_inodes: #Make sure its not invalid
+      if dir.inode_num in inode_number_list: #NOT unallocated inode                                                                                  
+        if dir.name[1:-1] is not '.' or dir.name[1:-1]is not '..':
+          parent[dir.inode_num] = dir.parent_inode #map key = inode number. #map value = its parent
+
+  for dir in dirent_list:
+    if dir.name[1:-1] == '..' and dir.parent_inode == 2 and dir.inode_num != 2: #special case for root 2. it's parent needs to be itself
+      print "DIRECTORY INODE 2 NAME '..' LINK TO INODE",dir.inode_num,"SHOULD BE 2"
+    if dir.name[1:-1] == '.':
+      if dir.inode_num is not dir.parent_inode:
+        print "DIRECTORY INODE",dir.inode_num,"NAME '.' LINK TO INODE",dir.parent_inode,"SHOULD BE",dir.inode_num
+    elif  dir.name[1:-1] == '..' and dir.inode_num != 2:
+      if dir.parent_inode is not parent[dir.inode_num] and dir.inode_num is not dir.parent_inode:
+        print "DIRECTORY INODE",dir.inode_num,"NAME '..' LINK TO INODE",dir.parent_inode,"SHOULD BE",parent[dir.inode_num]
+      
+
+"""  one_dot = []
   two_dot = []
   for dir in dirent_list:
     if dir.name[1:-1] is '.':
-      one_dot.append(dir.parent_inode) #TODO: should this be inode num of referenced file??
+      print dir.parent_inode,"has ."
+      one_dot.append(dir.parent_inode)
     elif dir.name[1:-1] == '..':
+      print dir.parent_inode,"has.."
       two_dot.append(dir.parent_inode)
   
   for dir in dirent_list: #make sure each entry is in one dot and two dot
@@ -227,34 +251,36 @@ def check_directory_two(superblock):
       print "DIRECTORY INODE",dir.parent_inode,"NAME '.' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
     elif dir.parent_inode not in two_dot:
       print "DIRECTORY INODE",dir.parent_inode,"NAME '..' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+"""
 
 def check_inode_linkcount(superblock):
   #total number of inodes
   #if there's only 1 group, tot_blocks could be < blocks per group                                                                               
   if( superblock.tot_blocks < superblock.blocks_per_group):
     total_inodes = superblock.inodes_per_group
-  else:#TODO: this would need to be fixed for multiple groups.
+  else:#this would need to be fixed for multiple groups.
     total_inodes = (superblock.tot_blocks / superblock.blocks_per_group) * (superblock.inodes_per_group)
   inode_to_link = {}
   for dir in dirent_list:
     inode = dir.inode_num
     if inode > total_inodes:
       #invalid inode
-      print "DIRECTORY INODE",inode,"NAME",dir.name,"INVALID INODE",dir.inode_num 
-    if inode in inode_to_link:
-      inode_to_link[inode] += 1#already in dictory so increment link counter
+      print "DIRECTORY INODE",dir.parent_inode,"NAME",dir.name,"INVALID INODE",dir.inode_num 
     else:
-      inode_to_link[inode] = 1#init link counter dictionary entry
-    if inode not in inode_number_list: #unallocated inode
-      print "DIRECTORY INODE",inode,"NAME",dir.name,"UNALLOCATED INODE",dir.inode_num
+      if inode in inode_to_link:
+        inode_to_link[inode] += 1#already in dictory so increment link counter
+      else:
+        inode_to_link[inode] = 1#init link counter dictionary entry
+        if inode not in inode_number_list: #unallocated inode
+          print "DIRECTORY INODE",dir.parent_inode,"NAME",dir.name,"UNALLOCATED INODE",dir.inode_num
   #check dictionary with inode link count values
   for inode in inode_list:
     if inode.inode_num in inode_to_link:
       if inode.link_count != inode_to_link[inode.inode_num]:
-        print "INODE",inode.inode_num,"HAS",inode_to_link[inode.inode_num],"BUT LINKCOUNT IS",inode.link_count
+        print "INODE",inode.inode_num,"HAS",inode_to_link[inode.inode_num],"LINKS BUT LINKCOUNT IS",inode.link_count
     else: 
       if inode.link_count != 0:
-        print "INODE",inode.inode_num,"HAS 0 BUT LINKCOUNT IS",inode.link_count
+        print "INODE",inode.inode_num,"HAS 0 LINKS BUT LINKCOUNT IS",inode.link_count
     
 def main():
   f = open(sys.argv[1], 'r')
