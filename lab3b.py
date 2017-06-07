@@ -97,12 +97,6 @@ class Indirect(object):
       self.block_num_indirect = int(line[4])
       self.block_num_ref = int(line[5])
 
-#multiple references data structs
-direct_blocks = []
-single_blocks = []
-double_blocks = []
-tripple_blocks = []
-
 def helper_offset(inx):
   if inx == 12:
   	return 12
@@ -123,18 +117,39 @@ def helper_indirect(inx):
   else:
   	return ""
 
-def invalid_blocks(superblock):
-  for inode in inode_list:
-	for inx,bp in enumerate(inode.block_pointers):
-	  if int(bp) < 0 or int(bp) >= superblock.tot_blocks:
-	  	indirect = helper_indirect(int(inx))
-	  	offset = helper_offset(int(inx))
-	  	print "INVALID " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+def helper_indirect_by_level(level):
+  if level == 1:
+  	return "INDIRECT "
+  elif level == 2:
+  	return "DOUBLE INDIRECT "
+  elif level == 3:
+	return "TRIPPLE INDIRECT "
 
-def reserved_blocks(superblock, group):
+invalid_blocks = []
+reserved_blocks = []
+def invalid_reserved(superblock, group):
   upper_range = group.first_inode + (superblock.inode_size * superblock.tot_inodes) / superblock.block_size
-  for block in range(1, upper_range):
-  	print block
+  for inode in inode_list:
+	for inx, bp in enumerate(inode.block_pointers):
+	  indirect = helper_indirect(int(inx))
+	  offset = helper_offset(int(inx))
+	  if int(bp) < 0 or int(bp) >= superblock.tot_blocks:
+	  	invalid_blocks.append(int(bp))
+	  	print "INVALID " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+	  for block in range(1,upper_range):
+		if int(bp) == block:
+		  reserved_blocks.append(int(bp))
+		  print "RESERVED " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+  for indirect_entry in indirect_list:
+  	indirect = helper_indirect_by_level(int(indirect_entry.level))
+  	offset = indirect_entry.log_block_offset
+	if indirect_entry.block_num_ref < 0 or indirect_entry.block_num_ref >= superblock.tot_blocks:
+	  invalid_blocks.append(int(bp))
+	  print "INVALID " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
+	for block in range(1,upper_range):
+	  if indirect_entry.block_num_ref == block:
+	  	reserved_blocks.append(int(indirect_entry.block_num_ref))
+	  	print "RESERVED " + indirect + "BLOCK " + str(int(bp)) + " IN INODE " + str(inode.inode_num) + " AT OFFSET " + str(offset)
 
 def allocated_blocks():
   # check all of the inodes in inode_list[i].block_pointers and see if they are
@@ -187,8 +202,19 @@ def duplicate_blocks():
 		offset = helper_offset(int(inx))
 		indirect = helper_indirect(int(inx))
 		unique_blocks.append(Dup_block(inode.block_pointers[inx], inode.inode_num, offset, indirect))
+  for indirect in indirect_list:
+	if indirect.block_num_ref == 0:
+	  continue
+	if is_it_duplicate(indirect.block_num_ref) == True:
+	  offset = indirect.log_block_offset
+	  dup_blocks.append(Dup_block(indirect.block_num_ref, indirect.inode_num_owning, offset, helper_indirect_by_level(indirect.level)))
+	else:
+	  offset = indirect.log_block_offset
+	  indirect_string = helper_indirect_by_level(indirect.level)
+	  unique_blocks.append(Dup_block(indirect.block_num_ref, indirect.inode_num_owning, offset, indirect_string))
   for dups in dup_blocks:
-  	print "DUPLICATE " + dups.indirect + "BLOCK " + str(dups.block_num) + " IN INODE " + str(dups.inode_num) + " AT OFFSET " + str(dups.offset)
+	if dups.block_num not in reserved_blocks and dups.block_num not in invalid_blocks:
+	  print "DUPLICATE " + dups.indirect + "BLOCK " + str(dups.block_num) + " IN INODE " + str(dups.inode_num) + " AT OFFSET " + str(dups.offset)
 
 def unreferenced_blocks(superblock, group):
   lower_range = group.first_inode + (superblock.inode_size * superblock.tot_inodes) / superblock.block_size
@@ -204,8 +230,8 @@ def unreferenced_blocks(superblock, group):
 	for indirect in indirect_list:
 	  if indirect.block_num_ref == block:
 	  	referenced = True
-	  if indirect.block_num_indirect == block:
-	  	referenced = True
+	  #if indirect.block_num_indirect == block:
+	  #	referenced = True
 	if referenced == False:
 	  print "UNREFERENCED BLOCK " + str(int(block))
 
@@ -310,12 +336,11 @@ def main():
   #Block consistency audits
   #block_audit()
   #Inode audits
-  reserved_blocks(superblock, group)
-  inode_audit(superblock)
+  invalid_reserved(superblock, group)
   unreferenced_blocks(superblock, group)
-  invalid_blocks(superblock)
   allocated_blocks()
   duplicate_blocks()
+  inode_audit(superblock)
   #Directory Consistency audits
   check_inode_linkcount(superblock)
   check_directory_two(superblock)#check for . and ..
