@@ -1,6 +1,6 @@
-#NAME:Samantha Tran, Apurva Panse
-#EMAIL: samantha.tran95@gmail.com
-#ID: 804282884 504488023
+#NAME: Samantha Tran, Apurva Panse
+#EMAIL: samantha.tran95@gmail.com, apoorvapanse@ucla.edu
+#ID: 804282884,504488023
 
 Slip days: 1 from Samantha Tran, 1 from Apurva Panse
 
@@ -9,3 +9,5 @@ Makefile: Has default option to build code, dist option to create tar.gz, and cl
 README: Contains info about files included
 
 lab3b.py: Python module to accept a csv file as an argument and analyze it for any errors
+The code is separated into functions based on different error messages and are named accordingly
+All the data is first parsed and separated into classes and each instance is added to an object-specific array
