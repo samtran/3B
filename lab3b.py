@@ -284,7 +284,7 @@ def check_directory_two(superblock):
           print "DIRECTORY INODE",dir.parent_inode,"NAME '.' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
 
     elif  dir.name[1:-1] == '..':
-      if dir.inode_num in parent and dir.inode_num != parent[dir.parent_inode] and dir.inode_num != 2:
+      if dir.parent_inode in parent and dir.inode_num != parent[dir.parent_inode] and dir.inode_num != 2:
         if dir.parent_inode != parent[dir.inode_num]:
           print "DIRECTORY INODE",dir.inode_num,"NAME '..' LINK TO INODE",dir.parent_inode,"SHOULD BE",parent[dir.inode_num]
       elif dir.inode_num in parent and dir.inode_num == 2 and twoflag == 0 and dir.inode_num != dir.parent_inode:
