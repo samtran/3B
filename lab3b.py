@@ -278,15 +278,18 @@ def check_directory_two(superblock):
   for dir in dirent_list:
     if dir.name[1:-1] == '.':
       if dir.inode_num is not dir.parent_inode:
-        if dir.inode_num == 2 and dir.parent_inode != 2:
+        if dir.inode_num != 2 and dir.parent_inode != 2:
           print "DIRECTORY INODE",dir.inode_num,"NAME '.' LINK TO INODE",dir.parent_inode,"SHOULD BE",dir.inode_num
+        if dir.inode_num == 2 and dir.parent_inode != 2:
+          print "DIRECTORY INODE",dir.parent_inode,"NAME '.' LINK TO INODE",dir.inode_num,"SHOULD BE",dir.parent_inode
+
     elif  dir.name[1:-1] == '..':
-      if dir.inode_num in parent and dir.inode_num != 2 and dir.parent_inode !=2:
-        if dir.parent_inode is not parent[dir.inode_num]:
+      if dir.inode_num in parent and dir.inode_num != parent[dir.parent_inode] and dir.inode_num != 2:
+        if dir.parent_inode != parent[dir.inode_num]:
           print "DIRECTORY INODE",dir.inode_num,"NAME '..' LINK TO INODE",dir.parent_inode,"SHOULD BE",parent[dir.inode_num]
-      elif dir.inode_num in parent and dir.parent_inode == 2 and twoflag == 0:
+      elif dir.inode_num in parent and dir.inode_num == 2 and twoflag == 0 and dir.inode_num != dir.parent_inode:
         twoflag = 1
-        print "DIRECTORY INODE",dir.parent_inode,"NAME '..' LINK TO INODE",dir.inode_num,"SHOULD BE 2"
+        print "DIRECTORY INODE",dir.inode_num,"NAME '..' LINK TO INODE",dir.parent_inode,"SHOULD BE 2"
         
 def check_inode_linkcount(superblock):
   #total number of inodes
